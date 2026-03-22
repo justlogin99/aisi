@@ -1,9 +1,7 @@
 # ⭐ Star 星星走起 动动发财手点点 ⭐
-Weirdhost &amp; 自动续期 &amp; 多账号版
+Weirdhost & 自动续期 & 多账号版
 
 ### 注册地址：https://hub.weirdhost.xyz
-
-![示例输出](img/6.png)
 
 ### ✅ 需要添加的 Secrets
 
@@ -11,39 +9,38 @@ Weirdhost &amp; 自动续期 &amp; 多账号版
 
 | Secret 名称 | 示例值 | 说明 |
 |:--|:--|:--|
-| `WEIRDHOST_ACCOUNTS` | `ACCOUNTS 格式` | 账号配置 JSON 注意:`Cookie不要填到这里` |
-| `WEIRDHOST_COOKIE_1` | `remember_web_59ba36addc2b2f940` | 账号1 的 Cookie |
-| `WEIRDHOST_COOKIE_2` | `remember_web_59ba36addc2b2f940` | 账号2 的 Cookie |
-| `WEIRDHOST_COOKIE_3` | `remember_web_59ba36addc2b2f940` | 账号3 的 Cookie |
-| ... | `remember_web_59ba36addc2b2f940` | 更多账号... |
-| `REPO_TOKEN` | `ghp_xxxxxxxxxxxx` | GitHub PAT（自动更新 Cookie） |
-| `TELEGRAM_BOT_TOKEN` | `123456789:ABC-XYZ...` | Telegram Bot Token |
-| `TELEGRAM_CHAT_ID` | `123456789` | Telegram Chat ID |
+| `WEIRDHOST_COOKIE_1` | `我的账号-----remember_web_59ba36addc2b2f940CCCC=XXXXXXXXXXX` | 账号1 的 Cookie（支持备注前缀） |
+| `WEIRDHOST_COOKIE_2` | `我的账号-----remember_web_59ba36addc2b2f940CCCC=XXXXXXXXXXX` | 账号2 的 Cookie（支持备注前缀） |
+| `WEIRDHOST_COOKIE_3` | `我的账号-----remember_web_59ba36addc2b2f940CCCC=XXXXXXXXXXX` | 账号3 的 Cookie（支持备注前缀） |
+| ... | `...` | 最多支持5个账号（1~5） |
+| `REPO_TOKEN` | `ghp_xxxxxxxxxxxx` | GitHub Personal Access Token（用于自动更新Cookie） |
+| `TG_BOT_TOKEN` | `123456789:ABC-XYZ...` | Telegram Bot Token（用于通知） |
+| `TG_CHAT_ID` | `123456789` | Telegram Chat ID（用于通知） |
+
+> **注意**：如果不需要自动更新Cookie，可以不设置`REPO_TOKEN`；如果不需要Telegram通知，可以不设置`TG_BOT_TOKEN`和`TG_CHAT_ID`。
 
 ---
 
-### 📌 ACCOUNTS 格式
+### 📌 Cookie 格式说明
 
-```json
-[
-  {
-    "remark": "备注账号一",
-    "id": "8a8db3cc",
-    "cookie_env": "WEIRDHOST_COOKIE_1"
-  },
-  {
-    "remark": "备注账号二",
-    "id": "e13623",
-    "cookie_env": "WEIRDHOST_COOKIE_2"
-  }
-]
+每个账号的 Cookie 需要以 **`备注-----remember_web_xxx=yyy`** 的格式填写到对应的 `WEIRDHOST_COOKIE_N` 中：
+
+- `备注`：自定义标识（可留空，但建议保留便于识别）
+- `-----`：分隔符（固定）
+- `remember_web_xxx=yyy`：从浏览器获取的完整 Cookie 键值对
+
+**示例**：
+```
+我的主账号-----remember_web_59ba36addc2b2f940CCCC=abcdef1234567890
 ```
 
----
+如果不需要备注，也可以直接填写纯 Cookie 格式：
+```
+remember_web_59ba36addc2b2f940CCCC=abcdef1234567890
+```
 
-### 📌 Cookie 格式（参考示例）
-
-你可以按下图输出的格式填入 `WEIRDHOST_COOKIE_1`：
+> 如何获取 Cookie？  
+> 登录 Weirdhost 后，在浏览器开发者工具中查看 `Application` → `Cookies`，找到以 `remember_web_` 开头的 Cookie，复制其完整的 `名称=值` 即可。
 
 ![示例输出](img/hub.weirdhost.xyz.Cookie.png)
 
