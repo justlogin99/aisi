@@ -377,7 +377,7 @@ async def check_cookie_valid_async(cookie_str):
     cn, cv = parse_weirdhost_cookie(cookie_str)
     if not cn or not cv:
         return False
-    connector = aiohttp.TCPConnector(ssl=False)
+    connector = aiohttp.TCPConnector()
     try:
         async with aiohttp.ClientSession(connector=connector) as session:
             session.cookie_jar.update_cookies({cn: cv})
@@ -408,7 +408,7 @@ def check_cookie_valid(cookie_str):
 
 async def get_account_info_via_api_async(cookie_str):
     api = WeirdHostAPI(cookie_str)
-    connector = aiohttp.TCPConnector(ssl=False)
+    connector = aiohttp.TCPConnector()
     async with aiohttp.ClientSession(connector=connector) as session:
         if not await api.init_session(session):
             return None
@@ -448,7 +448,7 @@ def get_account_info_via_api(cookie_str):
 
 async def get_server_info_via_api_async(cookie_str, server_uuid, server_type="notfree"):
     api = WeirdHostAPI(cookie_str)
-    connector = aiohttp.TCPConnector(ssl=False)
+    connector = aiohttp.TCPConnector()
     async with aiohttp.ClientSession(connector=connector) as session:
         if not await api.init_session(session):
             return None
