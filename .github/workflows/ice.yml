@@ -4,7 +4,7 @@ on:
   schedule:
     # 每 6 小时运行一次（续期有 6 小时冷却期）
     # 时间格式: 分 时 日 月 周几 (UTC)
-    - cron: '0 */6 * * *'
+    - cron: '0 */3 * * *'
   workflow_dispatch:  # 手动触发
 
 jobs:
