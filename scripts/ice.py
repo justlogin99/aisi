@@ -320,21 +320,23 @@ def handle_cf_challenge(sb, screenshot_prefix=""):
 
 
 def get_expiry_time_from_page(sb):
-    """从页面获取到期时间"""
+    """从页面获取到期时间（已修复元素识别）"""
     try:
-        # 查找 "Data ważności: XXXX-XX-XX XX:XX:XX" 的文本
+        # 使用 textContent 替代 innerText，并统一转为小写进行模糊匹配
+        # textContent 会获取 DOM 中的原始文本，不受 CSS 大小写渲染的影响
         text = sb.execute_script("""
-            var elements = document.querySelectorAll('p');
+            var elements = document.querySelectorAll('p, div, span'); // 扩大搜索范围以防 DOM 结构微调
             for (var i = 0; i < elements.length; i++) {
-                if (elements[i].innerText.includes('Data ważności:')) {
-                    return elements[i].innerText;
+                var content = elements[i].textContent;
+                if (content && content.toLowerCase().includes('data ważności:')) {
+                    return content;
                 }
             }
             return null;
         """)
         
         if text:
-            print(f"[*] 找到时间文本: {text}")
+            print(f"[*] 找到时间元素原始文本: {text}")
             # 提取 "XXXX-XX-XX XX:XX:XX" 格式的日期时间
             match = re.search(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})', text)
             if match:
