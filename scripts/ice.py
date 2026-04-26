@@ -213,6 +213,7 @@ def get_turnstile_checkbox_coords(sb):
 def activate_browser_window():
     """激活浏览器窗口"""
     try:
+        import subprocess
         result = subprocess.run(
             ["xdotool", "search", "--onlyvisible", "--class", "chrome"],
             capture_output=True, text=True, timeout=3
@@ -232,7 +233,7 @@ def activate_browser_window():
 
 def click_turnstile_checkbox(sb, coords=None):
     """点击 Turnstile 复选框"""
-    import subprocess
+    import os
     scroll_to_turnstile(sb)
     time.sleep(0.3)
     if not coords:
@@ -320,12 +321,10 @@ def handle_cf_challenge(sb, screenshot_prefix=""):
 
 
 def get_expiry_time_from_page(sb):
-    """从页面获取到期时间（已修复元素识别）"""
+    """从页面获取到期时间"""
     try:
-        # 使用 textContent 替代 innerText，并统一转为小写进行模糊匹配
-        # textContent 会获取 DOM 中的原始文本，不受 CSS 大小写渲染的影响
         text = sb.execute_script("""
-            var elements = document.querySelectorAll('p, div, span'); // 扩大搜索范围以防 DOM 结构微调
+            var elements = document.querySelectorAll('p, div, span');
             for (var i = 0; i < elements.length; i++) {
                 var content = elements[i].textContent;
                 if (content && content.toLowerCase().includes('data ważności:')) {
@@ -336,11 +335,12 @@ def get_expiry_time_from_page(sb):
         """)
         
         if text:
-            print(f"[*] 找到时间元素原始文本: {text}")
             # 提取 "XXXX-XX-XX XX:XX:XX" 格式的日期时间
             match = re.search(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})', text)
             if match:
-                return match.group(1)
+                time_str = match.group(1)
+                print(f"[*] 成功提取到期时间: {time_str}")
+                return time_str
         return None
     except Exception as e:
         print(f"[!] 获取到期时间异常: {e}")
@@ -361,7 +361,6 @@ def is_logged_in(sb):
         # 尝试获取到期时间作为登陆验证
         expiry = get_expiry_time_from_page(sb)
         if expiry:
-            print(f"[+] 检测到到期时间，已登陆: {expiry}")
             return True
         
         print("[!] 未找到到期时间信息")
@@ -369,21 +368,6 @@ def is_logged_in(sb):
     except Exception as e:
         print(f"[!] 登陆检查异常: {e}")
         return False
-
-
-def check_error_message(sb):
-    """检查页面是否有错误信息"""
-    try:
-        error_text = sb.execute_script("""
-            var errorDiv = document.querySelector('[role="alert"]');
-            if (errorDiv) {
-                return errorDiv.innerText;
-            }
-            return null;
-        """)
-        return error_text
-    except:
-        return None
 
 
 def renew_server(sb, screenshot_prefix=""):
@@ -394,7 +378,6 @@ def renew_server(sb, screenshot_prefix=""):
     
     # 获取续期前的时间
     time_before = get_expiry_time_from_page(sb)
-    print(f"[*] 续期前时间: {time_before}")
     
     # 点击续期按钮
     print("\n[续期] 查找续期按钮...")
@@ -424,25 +407,37 @@ def renew_server(sb, screenshot_prefix=""):
     else:
         print("[续期] 无需 CF 验证")
     
-    # 检查错误信息（冷却期）
-    print("\n[续期] 检查错误信息...")
-    error_msg = check_error_message(sb)
-    if error_msg:
-        print(f"[!] 检测到错误: {error_msg}")
-        if "niedawno" in error_msg.lower() or "recently" in error_msg.lower():
-            print("[!] 服务器处于冷却期，无法续期")
-            return {"status": "cooldown", "message": "冷却期内无法续期"}
-        return {"status": "error", "message": error_msg}
+    # 根据页面文本判断续期结果
+    print("\n[续期] 检查执行结果提示...")
+    status = "uncertain"
+    message = ""
     
-    # 页面会自动刷新，等待一下
-    print("\n[续期] 等待页面刷新...")
+    # 轮询 5 次检测页面提示文字
+    for _ in range(5):
+        try:
+            page_text = sb.execute_script("return document.body.innerText || document.body.textContent;").lower()
+            
+            if "przedłużyłeś ważność swojego serwera" in page_text:
+                status = "success"
+                break
+            elif "nie możesz przedłużyć serwera" in page_text and "niedawno" in page_text:
+                status = "cooldown"
+                message = "冷却期内无法续期"
+                break
+        except:
+            pass
+        time.sleep(1)
+
+    if status == "success":
+        print(f"\n[+] ✅ 续期成功！")
+    elif status == "cooldown":
+        print(f"\n[!] ⏳ 处于冷却期，无法续期")
+    else:
+        print(f"\n[!] ⚠️ 未检测到明确的成功或冷却提示")
+
+    # 页面可能会自动刷新，等待一下并手动刷新获取最新时间
+    print("\n[续期] 刷新页面以获取最新时间...")
     time.sleep(3)
-    
-    # 5 秒后手动刷新一次以确保获取最新数据
-    print("\n[续期] 5 秒后手动刷新页面以获取最新时间...")
-    time.sleep(5)
-    
-    print("[续期] 刷新页面...")
     try:
         sb.refresh()
         time.sleep(2)
@@ -451,23 +446,11 @@ def renew_server(sb, screenshot_prefix=""):
     
     # 获取续期后的时间
     time_after = get_expiry_time_from_page(sb)
-    print(f"[*] 续期后时间: {time_after}")
     
-    # 判断续期是否成功（简单比较字符串，如果不同就视为成功）
-    if time_before and time_after and time_before != time_after:
-        print(f"\n[+] ✅ 续期成功！")
-        print(f"    续期前: {time_before}")
-        print(f"    续期后: {time_after}")
-        screenshot_path = f"{screenshot_prefix}_success.png" if screenshot_prefix else "success.png"
-        sb.save_screenshot(screenshot_path)
-        return {"status": "success", "time_before": time_before, "time_after": time_after, "screenshot": screenshot_path}
-    else:
-        print(f"\n[!] ❌ 无法判断续期是否成功")
-        print(f"    续期前: {time_before}")
-        print(f"    续期后: {time_after}")
-        screenshot_path = f"{screenshot_prefix}_uncertain.png" if screenshot_prefix else "uncertain.png"
-        sb.save_screenshot(screenshot_path)
-        return {"status": "uncertain", "time_before": time_before, "time_after": time_after, "screenshot": screenshot_path}
+    screenshot_path = f"{screenshot_prefix}_{status}.png" if screenshot_prefix else f"{status}.png"
+    sb.save_screenshot(screenshot_path)
+    
+    return {"status": status, "time_before": time_before, "time_after": time_after, "screenshot": screenshot_path, "message": message}
 
 
 def main():
