@@ -1,6 +1,8 @@
-# ⭐ Star 星星走起 动动发财手点点 ⭐
-Weirdhost & 自动续期 & 多账号版
-
+# 服务器控制面板 URL
+          ICEHOST_SERVER_URL: ${{ secrets.ICEHOST_SERVER_URL }}
+          
+          # 登陆 Cookie (cf_clearance; XSRF-TOKEN; icehostpl_session)
+          ICEHOST_COOKIE: ${{ secrets.ICEHOST_COOKIE }}
 ### 注册地址：https://hub.weirdhost.xyz
 
 ### ✅ 需要添加的 Secrets
