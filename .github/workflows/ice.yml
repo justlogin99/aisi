@@ -54,7 +54,7 @@ jobs:
         with:
           name: icehost-logs-${{ github.run_number }}
           path: |
-            *.png
+           # *.png
             *.log
             **/*.log
           retention-days: 7
